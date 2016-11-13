@@ -44,8 +44,8 @@ namespace Bot_Application3
                        {
                            message = $"I see...";
                        }
-
-                // message = sentimentScore;
+                       
+               // message = sentimentScore;
 
                 // return our reply to the user
                 // Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters");
