@@ -17,34 +17,37 @@ namespace Bot_Application3.Apicallers
 
         public static  async Task<dynamic> getSentiment(string message)
         {
-            queryUri += "sentiment";
-            // Http Request 
-            //var client = utilities.HttpUtility.getHttpClientForTextAnalytics();
-            try
-            {
-                var client = new HttpClient
-                {
-                    DefaultRequestHeaders = { {"Ocp-Apim-Subscription-Key", "07db8c70ffb04568b68a46f511b014c6"},
-                                                                    {"Accept", "application/json"}
-                                                                  }
-                };
-            
-            //Requst Body
-            //var json = getJSON(message);
+             queryUri += "sentiment";
+             // Http Request 
+             //var client = utilities.HttpUtility.getHttpClientForTextAnalytics();
+             try
+             {
+                 var client = new HttpClient
+                 {
+                     DefaultRequestHeaders = { {"Ocp-Apim-Subscription-Key", "07db8c70ffb04568b68a46f511b014c6"},
+                                                                     {"Accept", "application/json"} }
+                  };
 
-            var json = JsonConvert.SerializeObject(new List<DocumentInput> {
-                new DocumentInput { langugae = "en", id = "1", text = "" + message }});
-        
-        //   dynamic sentimentJsonResponse = await getResponse(queryUri, json, client,"sentiment");
-        var sentimentPost = await client.PostAsync(queryUri, new StringContent(json, Encoding.UTF8, "application/json"));
-            var sentimentRawResponse = await sentimentPost.Content.ReadAsStringAsync();
-            var sentimentJsonResponse= JsonConvert.DeserializeObject<BatchResult>(sentimentRawResponse);
-            return sentimentJsonResponse?.documents?.FirstOrDefault()?.score ?? 0;
-            }
+             //Requst Body
+             //var json = getJSON(message);
+
+             var json = JsonConvert.SerializeObject(new BatchInput
+            {
+                documents = new List<DocumentInput> {
+                                                                     new DocumentInput { language="en" ,id = "1",  text = ""+message}}
+
+            });
+
+         //   dynamic sentimentJsonResponse = await getResponse(queryUri, json, client,"sentiment");
+             var sentimentPost = await client.PostAsync(queryUri, new StringContent(json, Encoding.UTF8, "application/json"));
+             var sentimentRawResponse = await sentimentPost.Content.ReadAsStringAsync();
+             var sentimentJsonResponse= JsonConvert.DeserializeObject<BatchResult>(sentimentRawResponse);
+             return sentimentJsonResponse?.documents?.FirstOrDefault()?.score ?? 0; 
+        }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return 0;
+                return -1;
             }
 
         }
@@ -64,7 +67,7 @@ namespace Bot_Application3.Apicallers
         private static dynamic getJSON(string message)
         {
             return JsonConvert.SerializeObject(new List < DocumentInput > {
-                new DocumentInput { langugae = "en", id = "1", text = "" + message }});
+                new DocumentInput { language = "en", id = "1", text = "" + message }});
         }
 
         private async static Task<dynamic> getResponse(string queryUri,dynamic json,dynamic client,string result)

@@ -7,7 +7,7 @@ public class BatchInput
 }
 public class DocumentInput
 {
-    public string langugae { get;set; }
+    public string language { get;set; }
     public string id { get; set; }
     public string text { get; set; }
 }
@@ -25,6 +25,6 @@ public class DocumentResult
 
 public class KeyPhraseResult
 {
-    public List<string> keyPhrases;
-    public string id;
+    public List<string> keyPhrases { get; set; }
+    public string id { get; set; }
 }
