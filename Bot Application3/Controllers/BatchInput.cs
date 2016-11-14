@@ -22,3 +22,9 @@ public class DocumentResult
     public double score { get; set; }
     public string id { get; set; }
 }
+
+public class KeyPhraseResult
+{
+    public List<string> keyPhrases;
+    public string id;
+}

@@ -29,20 +29,20 @@ namespace Bot_Application3
                 // calculate something for us to return
                 int length = (activity.Text ?? string.Empty).Length;
 
-                var sentimentScore = await Class1.callSentiment(activity.Text);
-              string message; // sentimentScore;
+                var sentimentScore = await TextAnalyticsAPI.getSentiment(activity.Text);
+                string message;// sentimentScore;
 
                        if (sentimentScore > 0.7)
                        {
-                           message = $"That's great to hear!";
+                           message = $"That's great to hear and sentment is{sentimentScore}!";
                        }
                        else if (sentimentScore < 0.3)
                        {
-                           message = $"I'm sorry to hear that...";
+                           message = $"I'm sorry to hear that and sentment is{sentimentScore}...";
                        }
                        else
                        {
-                           message = $"I see...";
+                           message = $"I see. and sentment is{sentimentScore}..";
                        }
                        
                // message = sentimentScore;
