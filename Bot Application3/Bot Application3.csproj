@@ -120,9 +120,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Apicallers\LUISAPI.cs" />
     <Compile Include="Apicallers\TextAnalyticsAPI.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
-    <Compile Include="Controllers\BatchInput.cs" />
+    <Compile Include="JSONClasses\BatchInput.cs" />
     <Compile Include="Controllers\MessagesController.cs" />
     <Compile Include="Dialogs\DefaultDialog.cs" />
     <Compile Include="Global.asax.cs">

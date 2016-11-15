@@ -32,11 +32,11 @@ namespace Bot_Application3
         {
             if (activity.Type == ActivityTypes.Message)
             {
-                /* ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
+                 ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
                  // calculate something for us to return
                  int length = (activity.Text ?? string.Empty).Length;
 
-                 var sentimentScore = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
+                 var sentimentScore = await LUISAPI.getIntent(activity.Text);
                  //string message;// sentimentScore;
 
                    /*     if (sentimentScore > 0.7)
@@ -50,16 +50,16 @@ namespace Bot_Application3
                         else
                         {
                             message = $"I see. and sentment is{sentimentScore}..";
-                        } 
+                        } */
 
                  //message = sentimentScore;
 
                  // return our reply to the user
                  // Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters");
-                 Activity reply = activity.CreateReply($"key phrases are {sentimentScore}..");
-                 await connector.Conversations.ReplyToActivityAsync(reply);*/
+                 Activity reply = activity.CreateReply($"key phrases are {sentimentScore.intents.First}..");
+                 await connector.Conversations.ReplyToActivityAsync(reply);
 
-                await Conversation.SendAsync(activity, MakeRoot);
+                
 
             }
             else
