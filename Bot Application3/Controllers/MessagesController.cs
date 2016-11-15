@@ -21,6 +21,7 @@ namespace Bot_Application3
     [BotAuthentication]
     public class MessagesController : ApiController
     {
+        EntityDetector ed = new EntityDetector();
 
        // <summary>
         /// POST: api/Messages
@@ -54,25 +55,159 @@ namespace Bot_Application3
                      // await connector.Conversations.ReplyToActivityAsync(reply);
                       var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
                       dynamic intent = await LUISAPI.getIntent(activity.Text);
-                      dynamic entityType = new EntityDetector().identifyType(keyPhrases);
+                    
+                    //  dynamic entityType =ed.identifyType(keyPhrases);
 
-                    var questReply = QuestionRecommender.quest(keyPhrases,intent,entityType ,null);
-                    if(questReply == null)
+                    // var questReply = InvokeRequestResponseService(keyPhrases, intent.toString(), entityType ,null);
+
+  
+            using (var client = new HttpClient())
+                {
+                    var scoreRequest = new
                     {
-                        questReply = "Will revert back to you soon ! ";
+
+                        Inputs = new Dictionary<string, StringTable>() {
+                        {
+                            "input1",
+                            new StringTable()
+                            {
+                                ColumnNames = new string[] {"Problem Entity Type", "Problem Type", "Problem Entity Name", "Process", "Flow", "Architecture", "DB Distribution", "ProblemAttrib"},
+                                Values = new string[,] {  { "", intent.toString(), keyPhrases, "", "", "", "", "" },  }
+                            }
+                        },
+                    },
+                        GlobalParameters = new Dictionary<string, string>()
+                        {
+                        }
+                    };
+                    const string apiKey = "eTU0ijE7tlY9abp67EsADsu+Rzc+fL9rAa0ExVQ50aHbPjIowb4lk+CutsPFZawoT21NtcrfBr3XZ5SaSD5bXA=="; // Replace this with the API key for the web service
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+                    client.BaseAddress = new Uri("https://ussouthcentral.services.azureml.net/workspaces/fcea84a4be97428298fa19193d6f700b/services/a1ff2b527eaa4bb2a9dc66d4e640ac52/execute?api-version=2.0&details=true");
+
+                    // WARNING: The 'await' statement below can result in a deadlock if you are calling this code from the UI thread of an ASP.Net application.
+                    // One way to address this would be to call ConfigureAwait(false) so that the execution does not attempt to resume on the original context.
+                    // For instance, replace code such as:
+                    //      result = await DoSomeTask()
+                    // with the following:
+                    //      result = await DoSomeTask().ConfigureAwait(false)
+
+
+                    HttpResponseMessage responsem = await client.PostAsJsonAsync("", scoreRequest);
+
+                    if (responsem.IsSuccessStatusCode)
+                    {
+                        string result = await responsem.Content.ReadAsStringAsync();
+                        //Console.WriteLine("Result: {0}", result);
                     }
-                    questReply += keyPhrases;
-                      //   Activity reply = activity.CreateReply(keyPhrases);
-                      Activity reply = activity.CreateReply($"{intent.toString()} {questReply} ");
+                    else
+                    {
+                        Console.WriteLine(string.Format("The request failed with status code: {0}", responsem.StatusCode));
+
+                        // Print the headers - they include the requert ID and the timestamp, which are useful for debugging the failure
+                       // Console.WriteLine(responsem.Headers.ToString());
+
+                        string responseContent = await responsem.Content.ReadAsStringAsync();
+                        //Console.WriteLine(responseContent);
+                    }
+                }
+            
+
+
+
+
+    /* if (questReply == null)
+         {
+             questReply = "Will revert back to you soon ! ";
+         }
+         questReply += keyPhrases;*/
+    Activity reply = activity.CreateReply(keyPhrases);
+                      //Activity reply = activity.CreateReply($"{intent.toString()} {questReply} ");
                       await connector.Conversations.ReplyToActivityAsync(reply);
                   }
+
+
+
                   else if (response1.Equals("PROBLEM"))
                   {
-                      //problem statement
-                      var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
-                      dynamic intent = await LUISAPI.getIntent(activity.Text);
-                      Activity reply = activity.CreateReply($"{intent.toString()} {keyPhrases} ");
-                      await connector.Conversations.ReplyToActivityAsync(reply);
+                    //problem statement
+
+                    // await connector.Conversations.ReplyToActivityAsync(reply);
+                    var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
+                    dynamic intent = await LUISAPI.getIntent(activity.Text);
+
+                    //  dynamic entityType =ed.identifyType(keyPhrases);
+
+                    // var questReply = InvokeRequestResponseService(keyPhrases, intent.toString(), entityType ,null);
+
+
+                    using (var client = new HttpClient())
+                    {
+                        var scoreRequest = new
+                        {
+
+                            Inputs = new Dictionary<string, StringTable>() {
+                        {
+                            "input1",
+                            new StringTable()
+                            {
+                                ColumnNames = new string[] {"Problem Entity Type", "Problem Type", "Problem Entity Name", "Process", "Flow", "Architecture", "DB Distribution", "ProblemAttrib"},
+                                Values = new string[,] {  { "", intent.toString(), keyPhrases, "", "", "", "", "" },  }
+                            }
+                        },
+                    },
+                            GlobalParameters = new Dictionary<string, string>()
+                            {
+                            }
+                        };
+                        const string apiKey = "eTU0ijE7tlY9abp67EsADsu+Rzc+fL9rAa0ExVQ50aHbPjIowb4lk+CutsPFZawoT21NtcrfBr3XZ5SaSD5bXA=="; // Replace this with the API key for the web service
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+                        client.BaseAddress = new Uri("https://ussouthcentral.services.azureml.net/workspaces/fcea84a4be97428298fa19193d6f700b/services/a1ff2b527eaa4bb2a9dc66d4e640ac52/execute?api-version=2.0&details=true");
+
+                        // WARNING: The 'await' statement below can result in a deadlock if you are calling this code from the UI thread of an ASP.Net application.
+                        // One way to address this would be to call ConfigureAwait(false) so that the execution does not attempt to resume on the original context.
+                        // For instance, replace code such as:
+                        //      result = await DoSomeTask()
+                        // with the following:
+                        //      result = await DoSomeTask().ConfigureAwait(false)
+
+
+                        HttpResponseMessage responsem = await client.PostAsJsonAsync("", scoreRequest);
+
+                        if (responsem.IsSuccessStatusCode)
+                        {
+                            string result = await responsem.Content.ReadAsStringAsync();
+                            //Console.WriteLine("Result: {0}", result);
+                        }
+                        else
+                        {
+                            Console.WriteLine(string.Format("The request failed with status code: {0}", responsem.StatusCode));
+
+                            // Print the headers - they include the requert ID and the timestamp, which are useful for debugging the failure
+                            // Console.WriteLine(responsem.Headers.ToString());
+
+                            string responseContent = await responsem.Content.ReadAsStringAsync();
+                            //Console.WriteLine(responseContent);
+                        }
+                    }
+
+
+
+
+
+                    /* if (questReply == null)
+                         {
+                             questReply = "Will revert back to you soon ! ";
+                         }
+                         questReply += keyPhrases;*/
+                  //  Activity reply = activity.CreateReply(keyPhrases);
+                    Activity reply = activity.CreateReply($"{intent.toString()} {keyPhrases} ");
+                    await connector.Conversations.ReplyToActivityAsync(reply);
+                    //var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
+                     // dynamic intent = await LUISAPI.getIntent(activity.Text);
+                      //Activity reply = activity.CreateReply($"{intent.toString()} {keyPhrases} ");
+                      //await connector.Conversations.ReplyToActivityAsync(reply);
                   } else
                   {
                       Activity reply = activity.CreateReply($"Key phrase is {response1}");
@@ -122,6 +257,7 @@ namespace Bot_Application3
             return response;
         }
 
+       
         private Activity HandleSystemMessage(Activity message)
         {
             if (message.Type == ActivityTypes.DeleteUserData)

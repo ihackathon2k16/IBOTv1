@@ -29,7 +29,7 @@ namespace ConsoleApplication1
             m_EntityMap.Add("GETESTIMATEDBILL", API);
             m_EntityMap.Add("GETQUOTE", API);
             m_EntityMap.Add("GETPRORATEDQUOTE", API);
-            m_EntityMap.Add("BLPREP", API);
+           
 
         }
   
@@ -38,7 +38,7 @@ namespace ConsoleApplication1
             string retVal;
             string key = i_key.ToUpper();
             retVal = m_EntityMap[key];
-            Console.WriteLine("Key =" + i_key + "Value=" + retVal);
+         //   Console.WriteLine("Key =" + i_key + "Value=" + retVal);
             return retVal;
 
         }
