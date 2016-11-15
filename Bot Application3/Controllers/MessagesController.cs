@@ -11,12 +11,19 @@ using System.Text;
 using System.Net.Http.Headers;
 using System.Collections.Generic;
 using Bot_Application3.Apicallers;
+using Microsoft.Bot.Builder.Dialogs;
+using Bot_Application3.Dialogs;
 
 namespace Bot_Application3
 {
     [BotAuthentication]
     public class MessagesController : ApiController
     {
+
+        internal static IDialog<object> MakeRoot()
+        {
+            return Chain.From(() => new DefaultDialog());
+        }
         /// <summary>
         /// POST: api/Messages
         /// Receive a message from a user and reply to it
@@ -25,32 +32,35 @@ namespace Bot_Application3
         {
             if (activity.Type == ActivityTypes.Message)
             {
-                ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
-                // calculate something for us to return
-                int length = (activity.Text ?? string.Empty).Length;
+                /* ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
+                 // calculate something for us to return
+                 int length = (activity.Text ?? string.Empty).Length;
 
-                var sentimentScore = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
-                //string message;// sentimentScore;
+                 var sentimentScore = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
+                 //string message;// sentimentScore;
 
-                  /*     if (sentimentScore > 0.7)
-                       {
-                           message = $"That's great to hear and sentment is{sentimentScore}!";
-                       }
-                       else if (sentimentScore < 0.3)
-                       {
-                           message = $"I'm sorry to hear that and sentment is{sentimentScore}...";
-                       }
-                       else
-                       {
-                           message = $"I see. and sentment is{sentimentScore}..";
-                       } */
-                       
-                //message = sentimentScore;
+                   /*     if (sentimentScore > 0.7)
+                        {
+                            message = $"That's great to hear and sentment is{sentimentScore}!";
+                        }
+                        else if (sentimentScore < 0.3)
+                        {
+                            message = $"I'm sorry to hear that and sentment is{sentimentScore}...";
+                        }
+                        else
+                        {
+                            message = $"I see. and sentment is{sentimentScore}..";
+                        } 
 
-                // return our reply to the user
-                // Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters");
-                Activity reply = activity.CreateReply($"key phrases are {sentimentScore}..");
-                await connector.Conversations.ReplyToActivityAsync(reply);
+                 //message = sentimentScore;
+
+                 // return our reply to the user
+                 // Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters");
+                 Activity reply = activity.CreateReply($"key phrases are {sentimentScore}..");
+                 await connector.Conversations.ReplyToActivityAsync(reply);*/
+
+                await Conversation.SendAsync(activity, MakeRoot);
+
             }
             else
             {

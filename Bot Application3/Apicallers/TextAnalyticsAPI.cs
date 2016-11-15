@@ -64,7 +64,7 @@ namespace Bot_Application3.Apicallers
             var sentimentJsonResponse = JsonConvert.DeserializeObject<KeyPhraseResult>(sentimentRawResponse);
             var keyPhrases = sentimentJsonResponse?.documents?.FirstOrDefault<KeyDocument>()?.keyPhrases; //.FirstOrDefault<String>() ?? "null";
             string combindedString = string.Join(",", keyPhrases);
-            return keyPhrases;
+            return combindedString;
 
             // string combindedString = string.Join(",", colors);
            // var json = getJSON(message);
