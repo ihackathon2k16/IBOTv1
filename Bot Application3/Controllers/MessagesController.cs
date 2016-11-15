@@ -29,10 +29,10 @@ namespace Bot_Application3
                 // calculate something for us to return
                 int length = (activity.Text ?? string.Empty).Length;
 
-                var sentimentScore = await TextAnalyticsAPI.getSentiment(activity.Text);
-                string message;// sentimentScore;
+                var sentimentScore = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
+                //string message;// sentimentScore;
 
-                       if (sentimentScore > 0.7)
+                  /*     if (sentimentScore > 0.7)
                        {
                            message = $"That's great to hear and sentment is{sentimentScore}!";
                        }
@@ -43,13 +43,13 @@ namespace Bot_Application3
                        else
                        {
                            message = $"I see. and sentment is{sentimentScore}..";
-                       }
+                       } */
                        
-               // message = sentimentScore;
+                //message = sentimentScore;
 
                 // return our reply to the user
                 // Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters");
-                Activity reply = activity.CreateReply(message);
+                Activity reply = activity.CreateReply($"key phrases are {sentimentScore}..");
                 await connector.Conversations.ReplyToActivityAsync(reply);
             }
             else

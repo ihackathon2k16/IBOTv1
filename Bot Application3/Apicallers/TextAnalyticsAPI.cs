@@ -14,71 +14,69 @@ namespace Bot_Application3.Apicallers
     public class TextAnalyticsAPI
     {
         public static string queryUri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/";
+        public static string apiKey = "07db8c70ffb04568b68a46f511b014c6";
 
         public static  async Task<dynamic> getSentiment(string message)
         {
-             queryUri += "sentiment";
-             // Http Request 
-             //var client = utilities.HttpUtility.getHttpClientForTextAnalytics();
+            queryUri += "sentiment";
+            
              try
              {
-                 var client = new HttpClient
-                 {
-                     DefaultRequestHeaders = { {"Ocp-Apim-Subscription-Key", "07db8c70ffb04568b68a46f511b014c6"},
-                                                                     {"Accept", "application/json"} }
-                  };
+                
+                var client = new HttpClient
+                {
+                    DefaultRequestHeaders = { {"Ocp-Apim-Subscription-Key", apiKey},
+                                                                    {"Accept", "application/json"}
+                                                                  }
+                };
 
-             //Requst Body
-             //var json = getJSON(message);
+                var json = getJSON(message);
+                 var sentimentPost = await client.PostAsync(queryUri, new StringContent(json, Encoding.UTF8, "application/json"));
+                  var sentimentRawResponse = await sentimentPost.Content.ReadAsStringAsync();
+                  var sentimentJsonResponse= JsonConvert.DeserializeObject<BatchResult>(sentimentRawResponse);
+                  dynamic sentimetScore = sentimentJsonResponse?.documents?.FirstOrDefault<DocumentResult>()?.score ?? 0;
+                return sentimetScore;
+               
 
-             var json = JsonConvert.SerializeObject(new BatchInput
-            {
-                documents = new List<DocumentInput> {
-                                                                     new DocumentInput { language="en" ,id = "1",  text = ""+message}}
-
-            });
-
-         //   dynamic sentimentJsonResponse = await getResponse(queryUri, json, client,"sentiment");
-             var sentimentPost = await client.PostAsync(queryUri, new StringContent(json, Encoding.UTF8, "application/json"));
-             var sentimentRawResponse = await sentimentPost.Content.ReadAsStringAsync();
-             var sentimentJsonResponse= JsonConvert.DeserializeObject<BatchResult>(sentimentRawResponse);
-             return sentimentJsonResponse?.documents?.FirstOrDefault()?.score ?? 0; 
-        }
+            }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 return -1;
             }
 
-        }
+         }
 
         public static async Task<dynamic> getKeyPhrases(string message)
         {
             queryUri += "keyPhrases";
-            // Http Request 
-            var client = utilities.HttpUtility.getHttpClientForTextAnalytics();
+
+            var client = new HttpClient
+            {
+                DefaultRequestHeaders = { {"Ocp-Apim-Subscription-Key", apiKey},
+                                                                    {"Accept", "application/json"}
+                                                                  }
+            };
 
             var json = getJSON(message);
-            dynamic data = await getResponse(queryUri, json, client,"key");
-            dynamic sentimentScore = data?.documents?.FirstOrDefault()?.keyPhrases?? 0;
-            return sentimentScore;
+            var sentimentPost = await client.PostAsync(queryUri, new StringContent(json, Encoding.UTF8, "application/json"));
+            var sentimentRawResponse = await sentimentPost.Content.ReadAsStringAsync();
+            var sentimentJsonResponse = JsonConvert.DeserializeObject<KeyPhraseResult>(sentimentRawResponse);
+            var keyPhrases = sentimentJsonResponse?.documents?.FirstOrDefault<KeyDocument>()?.keyPhrases; //.FirstOrDefault<String>() ?? "null";
+            string combindedString = string.Join(",", keyPhrases);
+            return keyPhrases;
+
+            // string combindedString = string.Join(",", colors);
+           // var json = getJSON(message);
+
         }
 
         private static dynamic getJSON(string message)
         {
-            return JsonConvert.SerializeObject(new List < DocumentInput > {
-                new DocumentInput { language = "en", id = "1", text = "" + message }});
+            return JsonConvert.SerializeObject(new BatchInput {
+            documents = new List<DocumentInput> { new DocumentInput { language = "en", id = "1", text = "" + message } }});
         }
 
-        private async static Task<dynamic> getResponse(string queryUri,dynamic json,dynamic client,string result)
-        {
-            var sentimentPost = await client.PostAsync(queryUri, new StringContent(json, Encoding.UTF8, "application/json"));
-            var sentimentRawResponse = await sentimentPost.Content.ReadAsStringAsync();
-            if(result.Equals("sentiment"))
-            return JsonConvert.DeserializeObject<BatchResult>(sentimentRawResponse);
-            else
-                return JsonConvert.DeserializeObject<KeyPhraseResult>(sentimentRawResponse);
-        }
 
     }
 }
