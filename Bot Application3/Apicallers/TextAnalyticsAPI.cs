@@ -73,8 +73,10 @@ namespace Bot_Application3.Apicallers
 
         private static dynamic getJSON(string message)
         {
-            return JsonConvert.SerializeObject(new BatchInput {
-            documents = new List<DocumentInput> { new DocumentInput { language = "en", id = "1", text = "" + message } }});
+            return JsonConvert.SerializeObject(new BatchInput
+            {
+                documents = new List<DocumentInput> { new DocumentInput { language = "en", id = "1", text = "" + message } }
+            });
         }
 
 

@@ -120,9 +120,13 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Apicallers\LinguisticAnalytics.cs" />
     <Compile Include="Apicallers\LUISAPI.cs" />
     <Compile Include="Apicallers\TextAnalyticsAPI.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="Controllers\EntityMapping.cs" />
+    <Compile Include="Controllers\MessageHandler.cs" />
+    <Compile Include="Controllers\QuestionRecommender.cs" />
     <Compile Include="JSONClasses\BatchInput.cs" />
     <Compile Include="Controllers\MessagesController.cs" />
     <Compile Include="Dialogs\DefaultDialog.cs" />

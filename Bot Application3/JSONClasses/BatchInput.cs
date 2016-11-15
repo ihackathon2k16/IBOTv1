@@ -37,14 +37,20 @@ public class KeyDocument
 public class LUISResult
 {
     public string query { get; set; }
-    public Intent[] intents { get; set; }
+    public Intent topScoringIntent { get; set; }
     public Entity   [] entities {get;set;}
+
+    public string toString()
+    {
+        return topScoringIntent.intent;
+    }
 }
 
 public class Intent
 {
     public string intent { get; set; }
     public float score { get; set; }
+
 }
 
 public class Entity
@@ -54,4 +60,17 @@ public class Entity
     public int startIndex { get; set; }
     public int endIndex { get; set; }
     public float score { get; set; }
-}  
+}
+
+public class LINGINPUT {
+    public string language { get; set; }
+    public List<string> anaid { get; set; }
+    public string query { get; set; }
+
+}
+
+public class LINGResp
+{
+    public string anaid { get; set; }
+    public List<string> result { get; set; }
+}

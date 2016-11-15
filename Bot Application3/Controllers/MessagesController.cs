@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using Bot_Application3.Apicallers;
 using Microsoft.Bot.Builder.Dialogs;
 using Bot_Application3.Dialogs;
+using Bot_Application3.Controllers;
+using ConsoleApplication1;
 
 namespace Bot_Application3
 {
@@ -20,11 +22,7 @@ namespace Bot_Application3
     public class MessagesController : ApiController
     {
 
-        internal static IDialog<object> MakeRoot()
-        {
-            return Chain.From(() => new DefaultDialog());
-        }
-        /// <summary>
+       // <summary>
         /// POST: api/Messages
         /// Receive a message from a user and reply to it
         /// </summary>
@@ -32,40 +30,94 @@ namespace Bot_Application3
         {
             if (activity.Type == ActivityTypes.Message)
             {
-                 ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
-                 // calculate something for us to return
-                 int length = (activity.Text ?? string.Empty).Length;
+                ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
 
-                 var sentimentScore = await LUISAPI.getIntent(activity.Text);
-                 //string message;// sentimentScore;
+                if (activity.Text.ToUpper().Contains("HI") || activity.Text.ToUpper().Contains("HELLO"))
+                  {
+                      Activity reply = activity.CreateReply($"Hi... How can I help you???");
+                      await connector.Conversations.ReplyToActivityAsync(reply);
+                      goto end;
+                  }
+                  else if (activity.Text.ToUpper().Contains("BYE") || activity.Text.ToUpper().Contains("THANK YOU"))
+                  {
+                      Activity reply = activity.CreateReply($"Bye... Keep in touch");
+                      await connector.Conversations.ReplyToActivityAsync(reply);
+                      goto end;
+                  }
 
-                   /*     if (sentimentScore > 0.7)
-                        {
-                            message = $"That's great to hear and sentment is{sentimentScore}!";
-                        }
-                        else if (sentimentScore < 0.3)
-                        {
-                            message = $"I'm sorry to hear that and sentment is{sentimentScore}...";
-                        }
-                        else
-                        {
-                            message = $"I see. and sentment is{sentimentScore}..";
-                        } */
+                  MessageHandler messageHandler = new MessageHandler();
+                  dynamic response1 = messageHandler.isQuestion(activity.Text);
+                  if (response1.Equals("QUESTION"))
+                  {
+                      //question
 
-                 //message = sentimentScore;
+                     // await connector.Conversations.ReplyToActivityAsync(reply);
+                      var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
+                      dynamic intent = await LUISAPI.getIntent(activity.Text);
+                      dynamic entityType = new EntityDetector().identifyType(keyPhrases);
 
-                 // return our reply to the user
-                 // Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters");
-                 Activity reply = activity.CreateReply($"key phrases are {sentimentScore.intents.First}..");
-                 await connector.Conversations.ReplyToActivityAsync(reply);
+                    var questReply = QuestionRecommender.quest(keyPhrases,intent,entityType ,null);
+                    if(questReply == null)
+                    {
+                        questReply = "Will revert back to you soon ! ";
+                    }
+                    questReply += keyPhrases;
+                      //   Activity reply = activity.CreateReply(keyPhrases);
+                      Activity reply = activity.CreateReply($"{intent.toString()} {questReply} ");
+                      await connector.Conversations.ReplyToActivityAsync(reply);
+                  }
+                  else if (response1.Equals("PROBLEM"))
+                  {
+                      //problem statement
+                      var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
+                      dynamic intent = await LUISAPI.getIntent(activity.Text);
+                      Activity reply = activity.CreateReply($"{intent.toString()} {keyPhrases} ");
+                      await connector.Conversations.ReplyToActivityAsync(reply);
+                  } else
+                  {
+                      Activity reply = activity.CreateReply($"Key phrase is {response1}");
+                      await connector.Conversations.ReplyToActivityAsync(reply);
+                      //Activity reply = activity.CreateReply($"key phrases are {sentimentScore}..");
 
-                
+                  }
+
+
+                  ////var POSScore = await LinguisticAnalytics.getPOS(activity.Text);
+
+                  //dynamic intent = await LUISAPI.getIntent(activity.Text);
+                  //var sentimentScore = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
+
+
+                  /*     if (sentimentScore > 0.7)
+                       {
+                           message = $"That's great to hear and sentment is{sentimentScore}!";
+                       }
+                       else if (sentimentScore < 0.3)
+                       {
+                           message = $"I'm sorry to hear that and sentment is{sentimentScore}...";
+                       }
+                       else
+                       {
+                           message = $"I see. and sentment is{sentimentScore}..";
+                       } */
+
+                //message = sentimentScore;
+
+                // return our reply to the user
+
+                //Activity reply = activity.CreateReply($"key phrases are {sentimentScore}..");
+                //Activity reply = activity.CreateReply($"Intent is  {intent.toString()}..");
+
+                //    await connector.Conversations.ReplyToActivityAsync(reply);
+
+              //  dynamic POSScore = await LinguisticAnalytics.getPOS(activity.Text);
 
             }
             else
             {
                 HandleSystemMessage(activity);
             }
+            end:
             var response = Request.CreateResponse(HttpStatusCode.OK);
             return response;
         }
