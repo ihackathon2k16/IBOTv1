@@ -13,12 +13,12 @@ namespace Bot_Application3.Apicallers
 
     public class TextAnalyticsAPI
     {
-        public static string queryUri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/";
+       // public static string queryUri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/";
         public static string apiKey = "07db8c70ffb04568b68a46f511b014c6";
 
         public static  async Task<dynamic> getSentiment(string message)
         {
-            queryUri += "sentiment";
+            string queryUri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment";
             
              try
              {
@@ -49,7 +49,7 @@ namespace Bot_Application3.Apicallers
 
         public static async Task<dynamic> getKeyPhrases(string message)
         {
-            queryUri += "keyPhrases";
+            string queryUri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/keyPhrases";
 
             var client = new HttpClient
             {

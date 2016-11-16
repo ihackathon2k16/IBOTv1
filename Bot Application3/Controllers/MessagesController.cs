@@ -15,6 +15,7 @@ using Microsoft.Bot.Builder.Dialogs;
 using Bot_Application3.Dialogs;
 using Bot_Application3.Controllers;
 using ConsoleApplication1;
+using System.Threading;
 
 namespace Bot_Application3
 {
@@ -22,63 +23,99 @@ namespace Bot_Application3
     public class MessagesController : ApiController
     {
         EntityDetector ed = new EntityDetector();
-
+        
         public static string queryUri = "https://api.projectoxford.ai/linguistics/v1.0/analyze/";
         public static string apiKey = "02c5a614172d48a0af2517a3063f0063";
-
+        public static string info = "";
 
         public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
         {
+            var DbDistribution = "";
+            var sysArchitecture = "";
+            var count = 0;
+            dynamic intent = null;
+            dynamic POS = null;
+            dynamic keyPhrases = null;
+            bool dontcall = false;
             if (activity.Type == ActivityTypes.Message)
             {
                 ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
 
 
                 //Greeting part
+                
+
+                MessageHandler messageHandler = new MessageHandler();
+
+                dynamic isQuestion = messageHandler.isQuestion(activity.Text);
+
+
+
                 if (activity.Text.ToUpper().Contains("HI") || activity.Text.ToUpper().Contains("HELLO"))
-                  {
-                      Activity reply = activity.CreateReply($"Hi... How can I help you???");
-                      await connector.Conversations.ReplyToActivityAsync(reply);
-                      
-                  }
+                {
+                    Activity reply = activity.CreateReply($"Hi... I am AMAPS...How can I help you???");
+                    await connector.Conversations.ReplyToActivityAsync(reply);
+                    dontcall = true;
+                }
 
                 //Good Bye part
-                  else if (activity.Text.ToUpper().Contains("BYE") || activity.Text.ToUpper().Contains("THANK YOU"))
-                  {
-                      Activity reply = activity.CreateReply($"Bye... Keep in touch");
-                      await connector.Conversations.ReplyToActivityAsync(reply);
+                else if (activity.Text.ToUpper().Contains("BYE") || activity.Text.ToUpper().Contains("THANK YOU"))
+                {
+                    Activity reply = activity.CreateReply($"Bye... Keep in touch");
+                    await connector.Conversations.ReplyToActivityAsync(reply);
+                    dontcall = true;
+                }
+
+                if (activity.Text.ToUpper().Contains("POR"))
+                {
+                    Activity reply = activity.CreateReply("Go to the link http://manishde16v/phpbb2/viewtopic.php?t=410&highlight=enable+por");
+                    Thread.Sleep(1000);
+                    await connector.Conversations.ReplyToActivityAsync(reply);
+                    dontcall = true;
+                }
+
+           /*     if (activity.Text.ToUpper().Contains("NORMAL")|| activity.Text.ToUpper().Contains("SPLIT"))
+                {
+                    Activity reply = activity.CreateReply("Are you running change cycle Flow or Rate Change Flow?");
                    
-                  }
+                    await connector.Conversations.ReplyToActivityAsync(reply);
+                        dontcall = true;
+                }
 
-                  MessageHandler messageHandler = new MessageHandler();
 
-                  dynamic isQuestion = messageHandler.isQuestion(activity.Text);
+                if (activity.Text.ToUpper().Contains("CHANGE CYCLE"))
+                {
+                    Activity reply = activity.CreateReply("Probable related CR:67734 incorrect rate while running change cycle flow");
 
-                if (isQuestion.Equals("QUESTION"))
-                  {
-                    //Key Phrases
-                    var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
-                   
-                    //Intetn
-                    dynamic intent = await LUISAPI.getIntent(activity.Text);
+                    await connector.Conversations.ReplyToActivityAsync(reply);
+                    dontcall = true;
+                }
 
-                    //POS
-                    var posclient = new HttpClient
-                    {
-                        DefaultRequestHeaders = { {"Ocp-Apim-Subscription-Key", apiKey},
-                                                                    {"Accept", "application/json"}
-                                                                  }
-                    };
+                if (activity.Text.ToUpper().Contains("RATECHANGE"))
+                {
+                    Activity reply = activity.CreateReply("Prabable related CR:65132 incorrect rate while running rate change flow");
 
-                    var jsonPOS = getJSON(activity.Text);
-                    var POSPost = await posclient.PostAsync(queryUri, new StringContent(jsonPOS, Encoding.UTF8, "application/json"));
-                    var POSRawResponse = await POSPost.Content.ReadAsStringAsync();
-                    var POSJsonResponse = JsonConvert.DeserializeObject<LINGResp>(POSRawResponse);
-                    // dynamic sentimetScore = sentimentJsonResponse?.documents?.FirstOrDefault<DocumentResult>()?.score ?? 0;
+                    await connector.Conversations.ReplyToActivityAsync(reply);
+                    dontcall = true;
+                }
+
+                if (activity.Text.ToUpper().Contains("INCORRECT"))
+                {
                     
-                    //End Of POC
+                   
+                    dontcall = false;
+                }
 
+                */
+                if (isQuestion.Equals("QUESTION"))
+                {
+                    //Key Phrases
+                    keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
 
+                    //Intetn
+                    intent = await LUISAPI.getIntent(activity.Text);
+
+                    dontcall = true;
                     //ML PART
                     using (var mlclient = new HttpClient())
                     {
@@ -94,116 +131,105 @@ namespace Bot_Application3
                                 }
                             },
                         },
-                        GlobalParameters = new Dictionary<string, string>()
-                        {
-                        }
-                    };
-                    const string apiKey = "eTU0ijE7tlY9abp67EsADsu+Rzc+fL9rAa0ExVQ50aHbPjIowb4lk+CutsPFZawoT21NtcrfBr3XZ5SaSD5bXA=="; // Replace this with the API key for the web service
-                    mlclient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-                    mlclient.BaseAddress = new Uri("https://ussouthcentral.services.azureml.net/workspaces/fcea84a4be97428298fa19193d6f700b/services/a1ff2b527eaa4bb2a9dc66d4e640ac52/execute?api-version=2.0&details=true");
-
-                    HttpResponseMessage responsem = await mlclient.PostAsJsonAsync("", scoreRequest);
-
-                    if (responsem.IsSuccessStatusCode)
-                    {
-                        string result = await responsem.Content.ReadAsStringAsync();
-                  
-                    }
-                    else
-                    {
-                        Console.WriteLine(string.Format("The request failed with status code: {0}", responsem.StatusCode));
-                        string responseContent = await responsem.Content.ReadAsStringAsync();
-                    }
-                }
-                    Activity reply = activity.CreateReply(keyPhrases);
-                      //Activity reply = activity.CreateReply($"{intent.toString()} {questReply} ");
-                      await connector.Conversations.ReplyToActivityAsync(reply);
-
-                }
-            //If block for quetion is finished
-
-                  else if (isQuestion.Equals("PROBLEM"))
-                  {
-                    //problem statement
-                    
-                    var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
-                    dynamic intent = await LUISAPI.getIntent(activity.Text);
-
-                    //POC Part
-                    var posclient = new HttpClient
-                    {
-                        DefaultRequestHeaders = { {"Ocp-Apim-Subscription-Key", apiKey},
-                                                                    {"Accept", "application/json"}
-                                                                  }
-                    };
-
-                    var jsonPOS = getJSON(activity.Text);
-                    var POSPost = await posclient.PostAsync(queryUri, new StringContent(jsonPOS, Encoding.UTF8, "application/json"));
-                    var POSRawResponse = await POSPost.Content.ReadAsStringAsync();
-                    var POSJsonResponse = JsonConvert.DeserializeObject<LINGResp>(POSRawResponse);
-                    // dynamic sentimetScore = sentimentJsonResponse?.documents?.FirstOrDefault<DocumentResult>()?.score ?? 0;
-                    //End of POC
-
-                    //ML PART
-                    using (var client = new HttpClient())
-                    {
-                        var scoreRequest = new
-                        {
-
-                            Inputs = new Dictionary<string, StringTable>() {
-                        {
-                            "input1",
-                            new StringTable()
-                            {
-                                ColumnNames = new string[] {"Problem Entity Type", "Problem Type", "Problem Entity Name", "Process", "Flow", "Architecture", "DB Distribution", "ProblemAttrib"},
-                                Values = new string[,] {  { "", intent.toString(), keyPhrases, "", "", "", "", "" },  }
-                            }
-                        },
-                    },
                             GlobalParameters = new Dictionary<string, string>()
                             {
                             }
                         };
                         const string apiKey = "eTU0ijE7tlY9abp67EsADsu+Rzc+fL9rAa0ExVQ50aHbPjIowb4lk+CutsPFZawoT21NtcrfBr3XZ5SaSD5bXA=="; // Replace this with the API key for the web service
-                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                        mlclient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
-                        client.BaseAddress = new Uri("https://ussouthcentral.services.azureml.net/workspaces/fcea84a4be97428298fa19193d6f700b/services/a1ff2b527eaa4bb2a9dc66d4e640ac52/execute?api-version=2.0&details=true");
-                        
-                        HttpResponseMessage responsem = await client.PostAsJsonAsync("", scoreRequest);
+                        mlclient.BaseAddress = new Uri("https://ussouthcentral.services.azureml.net/workspaces/fcea84a4be97428298fa19193d6f700b/services/a1ff2b527eaa4bb2a9dc66d4e640ac52/execute?api-version=2.0&details=true");
+
+                        HttpResponseMessage responsem = await mlclient.PostAsJsonAsync("", scoreRequest);
 
                         if (responsem.IsSuccessStatusCode)
                         {
                             string result = await responsem.Content.ReadAsStringAsync();
-                            
+
                         }
                         else
                         {
-                            Console.WriteLine(string.Format("The request failed with status code: {0}", responsem.StatusCode));
                             string responseContent = await responsem.Content.ReadAsStringAsync();
                         }
-                        //End of ML
+
+
+                    }
+                    //End of ML
+
+                    Activity reply = activity.CreateReply("Is the process this?");
+                    //Activity reply = activity.CreateReply($"{intent.toString()} {questReply} ");
+                    await connector.Conversations.ReplyToActivityAsync(reply);
+
+                }
+                //If block for quetion is finished
+
+                else if (isQuestion.Equals("PROBLEM")) //|| count == 2)
+                {
+                    //problem statement
+                    var sentiment = await TextAnalyticsAPI.getSentiment(activity.Text);
+                    
+                    if (sentiment < 0.4)
+                    {
+                        keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
+                        intent = await LUISAPI.getIntent(activity.Text);
+
+                        Activity reply = activity.CreateReply($"Negative statement and {intent.toString()} {keyPhrases}");
+                        await connector.Conversations.ReplyToActivityAsync(reply);
+
+                        //POC Part
+                        /*  var posclient = new HttpClient
+                          {
+                              DefaultRequestHeaders = { {"Ocp-Apim-Subscription-Key", apiKey},
+                                                                          {"Accept", "application/json"}
+                                                                        }
+                          };
+
+                          var jsonPOS = getJSON(activity.Text);
+                          var POSPost = await posclient.PostAsync(queryUri, new StringContent(jsonPOS, Encoding.UTF8, "application/json"));
+                          var POSRawResponse = await POSPost.Content.ReadAsStringAsync();
+                          var POSJsonResponse = JsonConvert.DeserializeObject<LINGResp>(POSRawResponse);
+                          // dynamic sentimetScore = sentimentJsonResponse?.documents?.FirstOrDefault<DocumentResult>()?.score ?? 0;
+                          //End of POC*/
 
                     }
 
+                    else
+                    {
+                        Activity reply = activity.CreateReply($"Normal statement");
+                        await connector.Conversations.ReplyToActivityAsync(reply);
+
+
+                    }
+
+
+
+                    /*if (count==0 && !dontcall)
+                    {
+                        Activity reply = activity.CreateReply($"How is your Db Architecture ? Split or normal?");
+                        await connector.Conversations.ReplyToActivityAsync(reply);
+
+                        count++;
+                    }
+                    */
+
+
+
                     //End of Problem Statement
-                 }
-                else
-                {
-                      Activity reply = activity.CreateReply($"OK..");
-                      await connector.Conversations.ReplyToActivityAsync(reply);
                 }
+                //Start of Simple statement
 
             }
+        
             else
             {
                 HandleSystemMessage(activity);
+                
             }
-            
+
             var response = Request.CreateResponse(HttpStatusCode.OK);
             return response;
-        }
 
+        }
 
         private static dynamic getJSON(string message)
         {
