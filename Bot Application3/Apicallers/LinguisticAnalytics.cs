@@ -16,8 +16,6 @@ namespace Bot_Application3.Apicallers
         public static string apiKey = "02c5a614172d48a0af2517a3063f0063";
         public static async Task<dynamic> getPOS(string message)
         {
-            try
-            {
 
                   var client = new HttpClient
                   {
@@ -34,18 +32,14 @@ namespace Bot_Application3.Apicallers
                   return POSResult ;
 
 
-    }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return -1;
-            }
+    
+            
 
         }
 
-        private static dynamic getJSON(string message)
+        public static dynamic getJSON(string message)
         {
-            return JsonConvert.SerializeObject(new LINGINPUT { language = "en", anaid = new List<string> { "22a6b758-420f-4745-8a3c-46835a67c0d2", "4fa79af1-f22c-408d-98bb-b7d7aeef7f04" }, query = "" + message });
+            return JsonConvert.SerializeObject(new LINGINPUT { language = "en", analyzerIds = new List<string> {"4fa79af1-f22c-408d-98bb-b7d7aeef7f04" }, text = "" + message });
             
         }
 

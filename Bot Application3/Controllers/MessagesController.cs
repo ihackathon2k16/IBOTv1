@@ -23,124 +23,129 @@ namespace Bot_Application3
     {
         EntityDetector ed = new EntityDetector();
 
-       // <summary>
-        /// POST: api/Messages
-        /// Receive a message from a user and reply to it
-        /// </summary>
+        public static string queryUri = "https://api.projectoxford.ai/linguistics/v1.0/analyze/";
+        public static string apiKey = "02c5a614172d48a0af2517a3063f0063";
+
+
         public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
         {
             if (activity.Type == ActivityTypes.Message)
             {
                 ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
 
+
+                //Greeting part
                 if (activity.Text.ToUpper().Contains("HI") || activity.Text.ToUpper().Contains("HELLO"))
                   {
                       Activity reply = activity.CreateReply($"Hi... How can I help you???");
                       await connector.Conversations.ReplyToActivityAsync(reply);
-                      goto end;
+                      
                   }
+
+                //Good Bye part
                   else if (activity.Text.ToUpper().Contains("BYE") || activity.Text.ToUpper().Contains("THANK YOU"))
                   {
                       Activity reply = activity.CreateReply($"Bye... Keep in touch");
                       await connector.Conversations.ReplyToActivityAsync(reply);
-                      goto end;
+                   
                   }
 
                   MessageHandler messageHandler = new MessageHandler();
-                  dynamic response1 = messageHandler.isQuestion(activity.Text);
-                  if (response1.Equals("QUESTION"))
+
+                  dynamic isQuestion = messageHandler.isQuestion(activity.Text);
+
+                if (isQuestion.Equals("QUESTION"))
                   {
-                      //question
+                    //Key Phrases
+                    var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
+                   
+                    //Intetn
+                    dynamic intent = await LUISAPI.getIntent(activity.Text);
 
-                     // await connector.Conversations.ReplyToActivityAsync(reply);
-                      var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
-                      dynamic intent = await LUISAPI.getIntent(activity.Text);
-                    
-                    //  dynamic entityType =ed.identifyType(keyPhrases);
-
-                    // var questReply = InvokeRequestResponseService(keyPhrases, intent.toString(), entityType ,null);
-
-  
-            using (var client = new HttpClient())
-                {
-                    var scoreRequest = new
+                    //POS
+                    var posclient = new HttpClient
                     {
+                        DefaultRequestHeaders = { {"Ocp-Apim-Subscription-Key", apiKey},
+                                                                    {"Accept", "application/json"}
+                                                                  }
+                    };
 
-                        Inputs = new Dictionary<string, StringTable>() {
+                    var jsonPOS = getJSON(activity.Text);
+                    var POSPost = await posclient.PostAsync(queryUri, new StringContent(jsonPOS, Encoding.UTF8, "application/json"));
+                    var POSRawResponse = await POSPost.Content.ReadAsStringAsync();
+                    var POSJsonResponse = JsonConvert.DeserializeObject<LINGResp>(POSRawResponse);
+                    // dynamic sentimetScore = sentimentJsonResponse?.documents?.FirstOrDefault<DocumentResult>()?.score ?? 0;
+                    
+                    //End Of POC
+
+
+                    //ML PART
+                    using (var mlclient = new HttpClient())
+                    {
+                        var scoreRequest = new
                         {
-                            "input1",
-                            new StringTable()
+                            Inputs = new Dictionary<string, StringTable>() {
                             {
+                                "input1",
+                                new StringTable()
+                                {
                                 ColumnNames = new string[] {"Problem Entity Type", "Problem Type", "Problem Entity Name", "Process", "Flow", "Architecture", "DB Distribution", "ProblemAttrib"},
                                 Values = new string[,] {  { "", intent.toString(), keyPhrases, "", "", "", "", "" },  }
-                            }
+                                }
+                            },
                         },
-                    },
                         GlobalParameters = new Dictionary<string, string>()
                         {
                         }
                     };
                     const string apiKey = "eTU0ijE7tlY9abp67EsADsu+Rzc+fL9rAa0ExVQ50aHbPjIowb4lk+CutsPFZawoT21NtcrfBr3XZ5SaSD5bXA=="; // Replace this with the API key for the web service
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                    mlclient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
-                    client.BaseAddress = new Uri("https://ussouthcentral.services.azureml.net/workspaces/fcea84a4be97428298fa19193d6f700b/services/a1ff2b527eaa4bb2a9dc66d4e640ac52/execute?api-version=2.0&details=true");
+                    mlclient.BaseAddress = new Uri("https://ussouthcentral.services.azureml.net/workspaces/fcea84a4be97428298fa19193d6f700b/services/a1ff2b527eaa4bb2a9dc66d4e640ac52/execute?api-version=2.0&details=true");
 
-                    // WARNING: The 'await' statement below can result in a deadlock if you are calling this code from the UI thread of an ASP.Net application.
-                    // One way to address this would be to call ConfigureAwait(false) so that the execution does not attempt to resume on the original context.
-                    // For instance, replace code such as:
-                    //      result = await DoSomeTask()
-                    // with the following:
-                    //      result = await DoSomeTask().ConfigureAwait(false)
-
-
-                    HttpResponseMessage responsem = await client.PostAsJsonAsync("", scoreRequest);
+                    HttpResponseMessage responsem = await mlclient.PostAsJsonAsync("", scoreRequest);
 
                     if (responsem.IsSuccessStatusCode)
                     {
                         string result = await responsem.Content.ReadAsStringAsync();
-                        //Console.WriteLine("Result: {0}", result);
+                  
                     }
                     else
                     {
                         Console.WriteLine(string.Format("The request failed with status code: {0}", responsem.StatusCode));
-
-                        // Print the headers - they include the requert ID and the timestamp, which are useful for debugging the failure
-                       // Console.WriteLine(responsem.Headers.ToString());
-
                         string responseContent = await responsem.Content.ReadAsStringAsync();
-                        //Console.WriteLine(responseContent);
                     }
                 }
-            
-
-
-
-
-    /* if (questReply == null)
-         {
-             questReply = "Will revert back to you soon ! ";
-         }
-         questReply += keyPhrases;*/
-    Activity reply = activity.CreateReply(keyPhrases);
+                    Activity reply = activity.CreateReply(keyPhrases);
                       //Activity reply = activity.CreateReply($"{intent.toString()} {questReply} ");
                       await connector.Conversations.ReplyToActivityAsync(reply);
-                  }
 
+                }
+            //If block for quetion is finished
 
-
-                  else if (response1.Equals("PROBLEM"))
+                  else if (isQuestion.Equals("PROBLEM"))
                   {
                     //problem statement
-
-                    // await connector.Conversations.ReplyToActivityAsync(reply);
+                    
                     var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
                     dynamic intent = await LUISAPI.getIntent(activity.Text);
 
-                    //  dynamic entityType =ed.identifyType(keyPhrases);
+                    //POC Part
+                    var posclient = new HttpClient
+                    {
+                        DefaultRequestHeaders = { {"Ocp-Apim-Subscription-Key", apiKey},
+                                                                    {"Accept", "application/json"}
+                                                                  }
+                    };
 
-                    // var questReply = InvokeRequestResponseService(keyPhrases, intent.toString(), entityType ,null);
+                    var jsonPOS = getJSON(activity.Text);
+                    var POSPost = await posclient.PostAsync(queryUri, new StringContent(jsonPOS, Encoding.UTF8, "application/json"));
+                    var POSRawResponse = await POSPost.Content.ReadAsStringAsync();
+                    var POSJsonResponse = JsonConvert.DeserializeObject<LINGResp>(POSRawResponse);
+                    // dynamic sentimetScore = sentimentJsonResponse?.documents?.FirstOrDefault<DocumentResult>()?.score ?? 0;
+                    //End of POC
 
-
+                    //ML PART
                     using (var client = new HttpClient())
                     {
                         var scoreRequest = new
@@ -164,100 +169,48 @@ namespace Bot_Application3
                         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
                         client.BaseAddress = new Uri("https://ussouthcentral.services.azureml.net/workspaces/fcea84a4be97428298fa19193d6f700b/services/a1ff2b527eaa4bb2a9dc66d4e640ac52/execute?api-version=2.0&details=true");
-
-                        // WARNING: The 'await' statement below can result in a deadlock if you are calling this code from the UI thread of an ASP.Net application.
-                        // One way to address this would be to call ConfigureAwait(false) so that the execution does not attempt to resume on the original context.
-                        // For instance, replace code such as:
-                        //      result = await DoSomeTask()
-                        // with the following:
-                        //      result = await DoSomeTask().ConfigureAwait(false)
-
-
+                        
                         HttpResponseMessage responsem = await client.PostAsJsonAsync("", scoreRequest);
 
                         if (responsem.IsSuccessStatusCode)
                         {
                             string result = await responsem.Content.ReadAsStringAsync();
-                            //Console.WriteLine("Result: {0}", result);
+                            
                         }
                         else
                         {
                             Console.WriteLine(string.Format("The request failed with status code: {0}", responsem.StatusCode));
-
-                            // Print the headers - they include the requert ID and the timestamp, which are useful for debugging the failure
-                            // Console.WriteLine(responsem.Headers.ToString());
-
                             string responseContent = await responsem.Content.ReadAsStringAsync();
-                            //Console.WriteLine(responseContent);
                         }
+                        //End of ML
+
                     }
 
-
-
-
-
-                    /* if (questReply == null)
-                         {
-                             questReply = "Will revert back to you soon ! ";
-                         }
-                         questReply += keyPhrases;*/
-                  //  Activity reply = activity.CreateReply(keyPhrases);
-                    Activity reply = activity.CreateReply($"{intent.toString()} {keyPhrases} ");
-                    await connector.Conversations.ReplyToActivityAsync(reply);
-                    //var keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
-                     // dynamic intent = await LUISAPI.getIntent(activity.Text);
-                      //Activity reply = activity.CreateReply($"{intent.toString()} {keyPhrases} ");
-                      //await connector.Conversations.ReplyToActivityAsync(reply);
-                  } else
-                  {
-                      Activity reply = activity.CreateReply($"Key phrase is {response1}");
+                    //End of Problem Statement
+                 }
+                else
+                {
+                      Activity reply = activity.CreateReply($"OK..");
                       await connector.Conversations.ReplyToActivityAsync(reply);
-                      //Activity reply = activity.CreateReply($"key phrases are {sentimentScore}..");
-
-                  }
-
-
-                  ////var POSScore = await LinguisticAnalytics.getPOS(activity.Text);
-
-                  //dynamic intent = await LUISAPI.getIntent(activity.Text);
-                  //var sentimentScore = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
-
-
-                  /*     if (sentimentScore > 0.7)
-                       {
-                           message = $"That's great to hear and sentment is{sentimentScore}!";
-                       }
-                       else if (sentimentScore < 0.3)
-                       {
-                           message = $"I'm sorry to hear that and sentment is{sentimentScore}...";
-                       }
-                       else
-                       {
-                           message = $"I see. and sentment is{sentimentScore}..";
-                       } */
-
-                //message = sentimentScore;
-
-                // return our reply to the user
-
-                //Activity reply = activity.CreateReply($"key phrases are {sentimentScore}..");
-                //Activity reply = activity.CreateReply($"Intent is  {intent.toString()}..");
-
-                //    await connector.Conversations.ReplyToActivityAsync(reply);
-
-              //  dynamic POSScore = await LinguisticAnalytics.getPOS(activity.Text);
+                }
 
             }
             else
             {
                 HandleSystemMessage(activity);
             }
-            end:
+            
             var response = Request.CreateResponse(HttpStatusCode.OK);
             return response;
         }
 
-       
+
+        private static dynamic getJSON(string message)
+        {
+            return JsonConvert.SerializeObject(new LINGINPUT { language = "en", analyzerIds = new List<string> { "22a6b758-420f-4745-8a3c-46835a67c0d2", "4fa79af1-f22c-408d-98bb-b7d7aeef7f04" }, text = "" + message });
+
+        }
+
         private Activity HandleSystemMessage(Activity message)
         {
             if (message.Type == ActivityTypes.DeleteUserData)

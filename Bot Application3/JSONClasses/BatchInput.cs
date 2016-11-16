@@ -64,13 +64,13 @@ public class Entity
 
 public class LINGINPUT {
     public string language { get; set; }
-    public List<string> anaid { get; set; }
-    public string query { get; set; }
+    public List<string> analyzerIds { get; set; }
+    public string text { get; set; }
 
 }
 
 public class LINGResp
 {
-    public string anaid { get; set; }
+    public string analyzerId { get; set; }
     public List<string> result { get; set; }
 }
