@@ -68,7 +68,7 @@ namespace Bot_Application3
                     }
                 }
 
-                if (activity.Text.ToUpper().Contains("HI") || activity.Text.ToUpper().Contains("HELLO"))
+                if (activity.Text.ToUpper().Equals("HI") || activity.Text.ToUpper().Contains("HI ") || activity.Text.ToUpper().Contains("HELLO"))
                 {
                     Activity reply = activity.CreateReply($"Hi... I am AMAPS...How can I help you???");
                     await connector.Conversations.ReplyToActivityAsync(reply);
