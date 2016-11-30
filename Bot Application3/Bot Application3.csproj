@@ -139,6 +139,7 @@
   <ItemGroup>
     <Content Include="packages.config" />
     <None Include="Properties\PublishProfiles\AMAPS - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\AMAPS.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

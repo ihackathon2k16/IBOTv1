@@ -59,7 +59,7 @@ namespace Bot_Application3
                 }
 
                 //Good Bye part
-                else if (activity.Text.ToUpper().Contains("BYE") || activity.Text.ToUpper().Contains("THANK YOU"))
+                else if (activity.Text.ToUpper().Contains("BYE") || activity.Text.ToUpper().Contains("THANK"))
                 {
                     Activity reply = activity.CreateReply($"Bye... Keep in touch");
                     await connector.Conversations.ReplyToActivityAsync(reply);
@@ -68,7 +68,7 @@ namespace Bot_Application3
 
                 if (activity.Text.ToUpper().Contains("POR"))
                 {
-                    Activity reply = activity.CreateReply("Go to the link http://manishde16v/phpbb2/viewtopic.php?t=410&highlight=enable+por");
+                    Activity reply = activity.CreateReply("Please follow these steps to enable POR logs. Go to the link http://manishde16v/phpbb2/viewtopic.php?t=410&highlight=enable+por");
                     Thread.Sleep(1000);
                     await connector.Conversations.ReplyToActivityAsync(reply);
                     dontcall = true;
@@ -116,47 +116,9 @@ namespace Bot_Application3
                     intent = await LUISAPI.getIntent(activity.Text);
 
                     dontcall = true;
-                    //ML PART
-                    using (var mlclient = new HttpClient())
-                    {
-                        var scoreRequest = new
-                        {
-                            Inputs = new Dictionary<string, StringTable>() {
-                            {
-                                "input1",
-                                new StringTable()
-                                {
-                                ColumnNames = new string[] {"Problem Entity Type", "Problem Type", "Problem Entity Name", "Process", "Flow", "Architecture", "DB Distribution", "ProblemAttrib"},
-                                Values = new string[,] {  { "", intent.toString(), keyPhrases, "", "", "", "", "" },  }
-                                }
-                            },
-                        },
-                            GlobalParameters = new Dictionary<string, string>()
-                            {
-                            }
-                        };
-                        const string apiKey = "eTU0ijE7tlY9abp67EsADsu+Rzc+fL9rAa0ExVQ50aHbPjIowb4lk+CutsPFZawoT21NtcrfBr3XZ5SaSD5bXA=="; // Replace this with the API key for the web service
-                        mlclient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                    
 
-                        mlclient.BaseAddress = new Uri("https://ussouthcentral.services.azureml.net/workspaces/fcea84a4be97428298fa19193d6f700b/services/a1ff2b527eaa4bb2a9dc66d4e640ac52/execute?api-version=2.0&details=true");
-
-                        HttpResponseMessage responsem = await mlclient.PostAsJsonAsync("", scoreRequest);
-
-                        if (responsem.IsSuccessStatusCode)
-                        {
-                            string result = await responsem.Content.ReadAsStringAsync();
-
-                        }
-                        else
-                        {
-                            string responseContent = await responsem.Content.ReadAsStringAsync();
-                        }
-
-
-                    }
-                    //End of ML
-
-                    Activity reply = activity.CreateReply("Is the process this?");
+                    Activity reply = activity.CreateReply("DEMO DEBUG: You have asked a question");
                     //Activity reply = activity.CreateReply($"{intent.toString()} {questReply} ");
                     await connector.Conversations.ReplyToActivityAsync(reply);
 
@@ -173,7 +135,7 @@ namespace Bot_Application3
                         keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
                         intent = await LUISAPI.getIntent(activity.Text);
 
-                        Activity reply = activity.CreateReply($"Negative statement and {intent.toString()} {keyPhrases}");
+                        Activity reply = activity.CreateReply($"DEMO DEBUG: You seemed to have stated a problem and I have gathered that your problem is: {keyPhrases} {intent.toString()} ");
                         await connector.Conversations.ReplyToActivityAsync(reply);
 
                         //POC Part
@@ -191,11 +153,62 @@ namespace Bot_Application3
                           // dynamic sentimetScore = sentimentJsonResponse?.documents?.FirstOrDefault<DocumentResult>()?.score ?? 0;
                           //End of POC*/
 
+                        string flowName = "DEFAULT";
+                        string answerTag;
+
+                        //ML PART
+                        using (var mlclient = new HttpClient())
+                        {
+                            var scoreRequest = new
+                            {
+                                Inputs = new Dictionary<string, StringTable>() {
+                            {
+                                "input1",
+                                new StringTable()
+                                {
+                                ColumnNames = new string[] {"Problem Entity Type", "Problem Type", "Problem Entity Name", "Process", "Flow", "Architecture", "DB Distribution", "ProblemAttrib"},
+                                Values = new string[,] {  { "", intent.toString(), keyPhrases, "", "", "", "", "" },  }
+                                }
+                            },
+                        },
+                                GlobalParameters = new Dictionary<string, string>()
+                                {
+                                }
+                            };
+                            const string apiKey = "eTU0ijE7tlY9abp67EsADsu+Rzc+fL9rAa0ExVQ50aHbPjIowb4lk+CutsPFZawoT21NtcrfBr3XZ5SaSD5bXA=="; // Replace this with the API key for the web service
+                            mlclient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+                            mlclient.BaseAddress = new Uri("https://ussouthcentral.services.azureml.net/workspaces/fcea84a4be97428298fa19193d6f700b/services/a1ff2b527eaa4bb2a9dc66d4e640ac52/execute?api-version=2.0&details=true");
+
+                            HttpResponseMessage responsem = await mlclient.PostAsJsonAsync("", scoreRequest);
+
+                            if (responsem.IsSuccessStatusCode)
+                            {
+                                string result = await responsem.Content.ReadAsStringAsync();
+                                char[] flowId = new char[10];
+                                answerTag = result.Substring(result.LastIndexOf("[["), (result.Length - result.LastIndexOf("]]")));
+                                answerTag.CopyTo(answerTag.LastIndexOf(",") + 2, flowId, answerTag.LastIndexOf("/"),
+                                    (answerTag.LastIndexOf("/"))-(answerTag.LastIndexOf(",") + 2));
+                                flowName = flowId.ToString();
+                            }
+                            else
+                            {
+                                string responseContent = await responsem.Content.ReadAsStringAsync();
+                            }
+                            
+
+                        }
+                        //End of ML
+
+                        Activity flowSuggestion = activity.CreateReply($"You seem to be facing an issue with {flowName} flow");
+                        await connector.Conversations.ReplyToActivityAsync(flowSuggestion);
+
+
                     }
 
                     else
                     {
-                        Activity reply = activity.CreateReply($"Normal statement");
+                        Activity reply = activity.CreateReply($"DEMO DEBUG: You have provided an informative statement");
                         await connector.Conversations.ReplyToActivityAsync(reply);
 
 
