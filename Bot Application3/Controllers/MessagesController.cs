@@ -27,6 +27,7 @@ namespace Bot_Application3
         public static string queryUri = "https://api.projectoxford.ai/linguistics/v1.0/analyze/";
         public static string apiKey = "02c5a614172d48a0af2517a3063f0063";
         public static string info = "";
+        public static bool skipDirect = false;
 
         public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
         {
@@ -39,6 +40,7 @@ namespace Bot_Application3
             bool dontcall = false;
             if (activity.Type == ActivityTypes.Message)
             {
+                  
                 ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
 
 
@@ -49,13 +51,30 @@ namespace Bot_Application3
 
                 dynamic isQuestion = messageHandler.isQuestion(activity.Text);
 
+                if(skipDirect)
+                {
+                    var replySentiment = await TextAnalyticsAPI.getSentiment(activity.Text);
+                    skipDirect = false;
+                    if (replySentiment < 0.4)
+                    {
+                        Activity askFlow = activity.CreateReply($"Okay, Could you please mention the flow name");
+                        await connector.Conversations.ReplyToActivityAsync(askFlow);
 
+                    }
+                    else
+                    {
+                        Activity askFlow = activity.CreateReply($"Thank you for confirming the flow. checking for solutions");
+                        await connector.Conversations.ReplyToActivityAsync(askFlow);
+                    }
+                }
 
                 if (activity.Text.ToUpper().Contains("HI") || activity.Text.ToUpper().Contains("HELLO"))
                 {
                     Activity reply = activity.CreateReply($"Hi... I am AMAPS...How can I help you???");
                     await connector.Conversations.ReplyToActivityAsync(reply);
                     dontcall = true;
+                    var Okresponse = Request.CreateResponse(HttpStatusCode.OK);
+                    return Okresponse;
                 }
 
                 //Good Bye part
@@ -64,6 +83,8 @@ namespace Bot_Application3
                     Activity reply = activity.CreateReply($"Bye... Keep in touch");
                     await connector.Conversations.ReplyToActivityAsync(reply);
                     dontcall = true;
+                    var Okresponse = Request.CreateResponse(HttpStatusCode.OK);
+                    return Okresponse;
                 }
 
                 if (activity.Text.ToUpper().Contains("POR"))
@@ -72,6 +93,8 @@ namespace Bot_Application3
                     Thread.Sleep(1000);
                     await connector.Conversations.ReplyToActivityAsync(reply);
                     dontcall = true;
+                    var Okresponse = Request.CreateResponse(HttpStatusCode.OK);
+                    return Okresponse;
                 }
 
            /*     if (activity.Text.ToUpper().Contains("NORMAL")|| activity.Text.ToUpper().Contains("SPLIT"))
@@ -129,14 +152,14 @@ namespace Bot_Application3
                 {
                     //problem statement
                     var sentiment = await TextAnalyticsAPI.getSentiment(activity.Text);
-                    
+
                     if (sentiment < 0.4)
                     {
                         keyPhrases = await TextAnalyticsAPI.getKeyPhrases(activity.Text);
                         intent = await LUISAPI.getIntent(activity.Text);
 
-                        Activity reply = activity.CreateReply($"DEMO DEBUG: You seemed to have stated a problem and I have gathered that your problem is: {keyPhrases} {intent.toString()} ");
-                        await connector.Conversations.ReplyToActivityAsync(reply);
+                        //Activity reply = activity.CreateReply($"DEMO DEBUG: You seemed to have stated a problem and I have gathered that your problem is: {keyPhrases} {intent.toString()} ");
+                        //await connector.Conversations.ReplyToActivityAsync(reply);
 
                         //POC Part
                         /*  var posclient = new HttpClient
@@ -186,24 +209,31 @@ namespace Bot_Application3
                             {
                                 string result = await responsem.Content.ReadAsStringAsync();
                                 char[] flowId = new char[10];
-                                answerTag = result.Substring(result.LastIndexOf("[["), (result.Length - result.LastIndexOf("]]")));
-                                answerTag.CopyTo(answerTag.LastIndexOf(",") + 2, flowId, answerTag.LastIndexOf("/"),
-                                    (answerTag.LastIndexOf("/"))-(answerTag.LastIndexOf(",") + 2));
-                                flowName = flowId.ToString();
+                                answerTag = result.Substring(result.LastIndexOf("[["), (result.LastIndexOf("]]") - result.LastIndexOf("[[")));
+                                //answerTag.CopyTo(answerTag.LastIndexOf(",") + 2, flowId, answerTag.LastIndexOf("/"),
+                                //(answerTag.LastIndexOf("/"))-(answerTag.LastIndexOf(",") + 2));
+
+                                int lastComma = answerTag.LastIndexOf(",");
+                                int lastSlash = answerTag.LastIndexOf("\"");
+                                lastComma += 2;
+                                int lengthFlow = lastSlash - lastComma;
+
+                                flowName = answerTag.Substring(lastComma, lengthFlow);
                             }
                             else
                             {
                                 string responseContent = await responsem.Content.ReadAsStringAsync();
                             }
-                            
+
 
                         }
                         //End of ML
-
+                        skipDirect = true;
                         Activity flowSuggestion = activity.CreateReply($"You seem to be facing an issue with {flowName} flow");
                         await connector.Conversations.ReplyToActivityAsync(flowSuggestion);
 
 
+                        
                     }
 
                     else
